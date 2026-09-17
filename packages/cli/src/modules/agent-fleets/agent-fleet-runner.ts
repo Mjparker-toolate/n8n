@@ -8,6 +8,8 @@ export type FleetSpecialistRunRequest = {
 	instruction: string;
 	inboundMessages: AgentFleetMessageRecord[];
 	signal: AbortSignal;
+	/** Fleet member tool ids. The echo runner ignores this list. */
+	tools: string[];
 };
 
 export type FleetSpecialistRunResult =

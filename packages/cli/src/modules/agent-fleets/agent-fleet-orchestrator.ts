@@ -181,6 +181,7 @@ export class AgentFleetOrchestrator {
 				});
 
 				const inbound = inboundResultsForDeps(args.listMessages(), node.dependsOn, node.agentId);
+				const member = memberById(args.fleet, node.agentId);
 
 				try {
 					const result = await args.runner.run({
@@ -189,6 +190,7 @@ export class AgentFleetOrchestrator {
 						instruction: node.instruction,
 						inboundMessages: inbound,
 						signal: args.signal,
+						tools: member?.tools ?? [],
 					});
 
 					if (result.status === 'ok') {
