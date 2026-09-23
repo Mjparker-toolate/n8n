@@ -6,6 +6,7 @@ import { BadRequestError } from '@/errors/response-errors/bad-request.error';
 import { NotFoundError } from '@/errors/response-errors/not-found.error';
 import type { AgentRepository } from '@/modules/agents/repositories/agent.repository';
 
+import { DelegatingFleetSpecialistRunner } from '../agent-fleet-delegating-runner';
 import { EchoFleetSpecialistRunner } from '../agent-fleet-runner';
 import { AgentFleetStore } from '../agent-fleet-store';
 import type { AgentFleetsConfig } from '../agent-fleets.config';
@@ -50,13 +51,21 @@ describe('AgentFleetsService', () => {
 		);
 		logger = mock<Logger>();
 		logger.scoped.mockReturnValue(logger);
+		const config = {
+			maxParallel: 10,
+			runner: 'echo',
+			clawhubSkillsDir: '',
+			cursorApiUrl: 'https://api.cursor.com/v0/agents',
+		} as AgentFleetsConfig;
+		const echoRunner = new EchoFleetSpecialistRunner();
 		service = new AgentFleetsService(
 			moduleRegistry,
 			agentRepository,
 			logger,
-			{ maxParallel: 10 } as AgentFleetsConfig,
+			config,
 			new AgentFleetStore(),
-			new EchoFleetSpecialistRunner(),
+			echoRunner,
+			new DelegatingFleetSpecialistRunner(echoRunner, config),
 		);
 	});
 

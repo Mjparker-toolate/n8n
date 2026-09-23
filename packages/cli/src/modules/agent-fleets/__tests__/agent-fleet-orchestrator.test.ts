@@ -269,4 +269,19 @@ describe('AgentFleetOrchestrator', () => {
 		expect(messages.some((message) => message.type === 'task.assign')).toBe(true);
 		expect(messages.some((message) => message.type === 'task.result')).toBe(true);
 	});
+
+	it('passes fleet member tool ids into the specialist runner', async () => {
+		const received: string[][] = [];
+		const runner = new ScriptedRunner(async (runRequest) => {
+			received.push(runRequest.tools);
+			return { status: 'ok', output: { nodeId: runRequest.nodeId } };
+		});
+
+		await execute({
+			nodes: [node({ id: 'a', agentId: 'spec-a', kind: 'task', instruction: 'Do A' })],
+			runner,
+		});
+
+		expect(received).toEqual([['tool_a']]);
+	});
 });

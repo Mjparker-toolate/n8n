@@ -21,10 +21,10 @@ import { BadRequestError } from '@/errors/response-errors/bad-request.error';
 import { NotFoundError } from '@/errors/response-errors/not-found.error';
 import { AgentRepository } from '@/modules/agents/repositories/agent.repository';
 
+import { DelegatingFleetSpecialistRunner } from './agent-fleet-delegating-runner';
 import { assertKnownMessageType, FleetProtocolError } from './agent-fleet-messages';
 import { AgentFleetOrchestrator, describeTaskGraphError } from './agent-fleet-orchestrator';
-import type { FleetSpecialistRunner } from './agent-fleet-runner';
-import { EchoFleetSpecialistRunner } from './agent-fleet-runner';
+import { EchoFleetSpecialistRunner, type FleetSpecialistRunner } from './agent-fleet-runner';
 import { AgentFleetStore } from './agent-fleet-store';
 import { applyMemberUpdate, proposeSpecializationUpdate } from './agent-fleet-training';
 import { AgentFleetsConfig } from './agent-fleets.config';
@@ -40,7 +40,8 @@ export class AgentFleetsService {
 		private readonly logger: Logger,
 		private readonly config: AgentFleetsConfig,
 		private readonly store: AgentFleetStore,
-		private readonly runner: EchoFleetSpecialistRunner,
+		private readonly echoRunner: EchoFleetSpecialistRunner,
+		private readonly delegatingRunner: DelegatingFleetSpecialistRunner,
 	) {
 		this.logger = this.logger.scoped('agent-fleets');
 	}
@@ -131,7 +132,7 @@ export class AgentFleetsService {
 		projectId: string,
 		fleetId: string,
 		payload: CreateAgentFleetRunPayload,
-		runner: FleetSpecialistRunner = this.runner,
+		runner: FleetSpecialistRunner = this.resolveRunner(),
 	): Promise<AgentFleetRunRecord> {
 		this.assertAgentsModule();
 		const fleet = this.requireFleet(fleetId, projectId);
@@ -301,6 +302,10 @@ export class AgentFleetsService {
 			tools: payload.tools,
 			memoryScope: payload.memoryScope,
 		});
+	}
+
+	private resolveRunner(): FleetSpecialistRunner {
+		return this.config.runner === 'delegate' ? this.delegatingRunner : this.echoRunner;
 	}
 
 	private persistMessage(
